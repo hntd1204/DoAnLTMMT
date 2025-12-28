@@ -75,7 +75,6 @@ public class Pop3Handler {
                 String line;
                 boolean isHeader = true;
                 
-                // Biến lưu thông tin header chính
                 String mainContentType = "";
                 String mainEncoding = "";
 
@@ -99,7 +98,6 @@ public class Pop3Handler {
                     }
                 }
                 
-                // GỌI HÀM XỬ LÝ NỘI DUNG THÔNG MINH
                 email.cleanContent = processEmailBody(rawBody.toString(), mainContentType, mainEncoding);
                 list.add(email);
             }
@@ -112,15 +110,11 @@ public class Pop3Handler {
         socket.close();
     }
 
-    // --- CÁC HÀM XỬ LÝ NỘI DUNG (CORE) ---
-
     private String processEmailBody(String rawContent, String contentType, String encoding) {
-        // 1. Trường hợp Multipart (Email chứa cả Text và HTML)
         if (rawContent.contains("Content-Type:") || (contentType != null && contentType.toLowerCase().contains("multipart"))) {
             return extractTextFromMultipart(rawContent);
         }
         
-        // 2. Trường hợp Email đơn giản (chỉ có 1 phần)
         String decoded = rawContent;
         if ("base64".equalsIgnoreCase(encoding)) {
             decoded = decodeBase64(rawContent);
@@ -128,7 +122,6 @@ public class Pop3Handler {
             decoded = decodeQuotedPrintable(rawContent);
         }
         
-        // Nếu kết quả vẫn còn thẻ HTML, hãy lọc bỏ
         if (decoded.contains("<html") || decoded.contains("<div") || decoded.contains("<br")) {
             return stripHtmlTags(decoded);
         }
@@ -136,14 +129,11 @@ public class Pop3Handler {
         return decoded;
     }
 
-    // Hàm tách lấy văn bản thuần từ chuỗi Multipart hỗn độn
     private String extractTextFromMultipart(String raw) {
         try {
-            // Ưu tiên tìm phần text/plain (Văn bản thuần)
             String targetHeader = "Content-Type: text/plain";
             int index = raw.indexOf(targetHeader);
             
-            // Nếu không có text/plain, đành lấy text/html
             boolean isHtml = false;
             if (index == -1) {
                 targetHeader = "Content-Type: text/html";
@@ -152,28 +142,23 @@ public class Pop3Handler {
             }
             
             if (index != -1) {
-                // Tìm dòng trống kết thúc header của phần này
                 int headerEnd = findHeaderEnd(raw, index);
                 
                 if (headerEnd != -1) {
-                    // Kiểm tra xem phần nhỏ này có bị mã hóa không
                     String partHeaders = raw.substring(index, headerEnd).toLowerCase();
                     boolean isBase64 = partHeaders.contains("base64");
                     boolean isQuoted = partHeaders.contains("quoted-printable");
                     
-                    // Tìm boundary kết thúc (dòng bắt đầu bằng --)
-                    int startBody = headerEnd + 1; // +1 để bỏ qua \n
+                    int startBody = headerEnd + 1;
                     int endBody = raw.indexOf("\n--", startBody);
                     if (endBody == -1) endBody = raw.length();
                     
                     String contentPart = raw.substring(startBody, endBody).trim();
                     
-                    // Giải mã
                     String result = contentPart;
                     if (isBase64) result = decodeBase64(contentPart);
                     else if (isQuoted) result = decodeQuotedPrintable(contentPart);
                     
-                    // Nếu phải lấy từ HTML, hãy xóa thẻ tag đi
                     if (isHtml) {
                         return stripHtmlTags(result);
                     }
@@ -181,22 +166,16 @@ public class Pop3Handler {
                 }
             }
         } catch (Exception e) {
-            // e.printStackTrace();
         }
-        // Nếu thất bại, trả về thông báo sạch sẽ hơn là in toàn bộ code
         return "Không thể trích xuất nội dung văn bản từ email này.";
     }
 
-    // Hàm xóa thẻ HTML (Ví dụ: <br> thành xuống dòng, <div> bị xóa)
     private String stripHtmlTags(String html) {
-        // Bước 1: Thay thế <br> và </p> thành xuống dòng để dễ đọc
         String text = html.replaceAll("(?i)<br\\s*/?>", "\n");
         text = text.replaceAll("(?i)</p>", "\n\n");
         
-        // Bước 2: Xóa toàn bộ các thẻ <...> còn lại
         text = text.replaceAll("<[^>]+>", "");
         
-        // Bước 3: Giải mã các ký tự đặc biệt của HTML
         text = text.replace("&nbsp;", " ")
                    .replace("&amp;", "&")
                    .replace("&lt;", "<")
@@ -207,14 +186,11 @@ public class Pop3Handler {
     }
 
     private int findHeaderEnd(String raw, int startIndex) {
-        // Tìm 2 dòng trống liên tiếp (\n\n hoặc \r\n\r\n)
         int idx = raw.indexOf("\n\n", startIndex);
         if (idx == -1) idx = raw.indexOf("\r\n\r\n", startIndex);
-        // Nếu tìm thấy, trả về vị trí cuối cùng của dòng trống đó
         return (idx != -1) ? idx + ((raw.charAt(idx) == '\r') ? 4 : 2) : -1;
     }
 
-    // --- CÁC HÀM GIẢI MÃ ---
     private String decodeBase64(String encoded) {
         try {
             String clean = encoded.replaceAll("[^A-Za-z0-9+/=]", "");
@@ -247,7 +223,7 @@ public class Pop3Handler {
                         String hex = input.substring(i + 1, i + 3);
                         try { buffer.write(Integer.parseInt(hex, 16)); i += 2; } 
                         catch (Exception e) { buffer.write(c); }
-                    } else { buffer.write(c); } // Dấu bằng cuối dòng (soft linebreak)
+                    } else { buffer.write(c); }
                 } else { buffer.write(c); }
             }
             return new String(buffer.toByteArray(), StandardCharsets.UTF_8);

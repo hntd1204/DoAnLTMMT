@@ -12,7 +12,7 @@ public class SmtpHandler {
     private BufferedReader reader;
     private BufferedWriter writer;
 
-    // Kết nối và Đăng nhập (Giữ nguyên logic bỏ qua lỗi SSL)
+    // Kết nối và Đăng nhập
     public void connectAndLogin(String server, int port, String user, String appPassword) throws Exception {
         TrustManager[] trustAllCerts = new TrustManager[]{
             new X509TrustManager() {
@@ -39,31 +39,27 @@ public class SmtpHandler {
         System.out.println(">>> Đăng nhập OK!");
     }
 
-    // --- HÀM MỚI: GỬI MAIL KÈM FILE (MIME MULTIPART) ---
+    //GỬI MAIL KÈM FILE
     public void sendEmailWithAttachment(String from, String to, String subject, String body, File attachment) throws IOException {
         sendCommand("MAIL FROM:<" + from + ">");
         sendCommand("RCPT TO:<" + to + ">");
         sendCommand("DATA");
 
-        // Tạo vách ngăn (Boundary) để chia nội dung thư
         String boundary = "---Boundary_Nhom16_" + System.currentTimeMillis();
 
-        // 1. Header chính
         writer.write("Subject: " + subject + "\r\n");
         writer.write("From: " + from + "\r\n");
         writer.write("To: " + to + "\r\n");
         writer.write("MIME-Version: 1.0\r\n");
-        // Khai báo đây là mail hỗn hợp (Text + File)
         writer.write("Content-Type: multipart/mixed; boundary=\"" + boundary + "\"\r\n");
-        writer.write("\r\n"); // Kết thúc Header
+        writer.write("\r\n");
 
-        // 2. Phần nội dung thư (Text)
         writer.write("--" + boundary + "\r\n");
         writer.write("Content-Type: text/plain; charset=UTF-8\r\n");
         writer.write("Content-Transfer-Encoding: 7bit\r\n\r\n");
         writer.write(body + "\r\n\r\n");
 
-        // 3. Phần File đính kèm (Nếu có)
+        //Phần File đính kèm (Nếu có)
         if (attachment != null && attachment.exists()) {
             writer.write("--" + boundary + "\r\n");
             writer.write("Content-Type: application/octet-stream; name=\"" + attachment.getName() + "\"\r\n");
@@ -78,7 +74,7 @@ public class SmtpHandler {
 
         // 4. Kết thúc toàn bộ mail
         writer.write("--" + boundary + "--\r\n");
-        writer.write(".\r\n"); // Dấu chấm kết thúc lệnh DATA
+        writer.write(".\r\n");
         writer.flush();
         
         System.out.println("Client: [Đã gửi dữ liệu MIME]");
