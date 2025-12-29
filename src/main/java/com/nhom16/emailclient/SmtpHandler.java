@@ -59,7 +59,7 @@ public class SmtpHandler {
         writer.write("Content-Transfer-Encoding: 7bit\r\n\r\n");
         writer.write(body + "\r\n\r\n");
 
-        //Phần File đính kèm (Nếu có)
+        //Phần File đính kèm
         if (attachment != null && attachment.exists()) {
             writer.write("--" + boundary + "\r\n");
             writer.write("Content-Type: application/octet-stream; name=\"" + attachment.getName() + "\"\r\n");
@@ -72,7 +72,6 @@ public class SmtpHandler {
             writer.write(encodedFile + "\r\n\r\n");
         }
 
-        // 4. Kết thúc toàn bộ mail
         writer.write("--" + boundary + "--\r\n");
         writer.write(".\r\n");
         writer.flush();
@@ -93,7 +92,6 @@ public class SmtpHandler {
     private void readResponse(String step) throws IOException {
         String line = reader.readLine();
         while (line != null) {
-            // System.out.println("Server: " + line); // Bỏ comment nếu muốn xem log chi tiết
             if (line.length() >= 4 && line.charAt(3) == '-') {
                 line = reader.readLine(); 
             } else {

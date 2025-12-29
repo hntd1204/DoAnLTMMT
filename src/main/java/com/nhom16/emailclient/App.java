@@ -53,16 +53,14 @@ public class App extends Application {
 
         btnLogin.setOnAction(e -> {
             try {
-                // Kiểm tra đăng nhập bằng cách kết nối thử SMTP
                 smtpHandler = new SmtpHandler();
                 smtpHandler.connectAndLogin(txtServer.getText(), 465, txtUser.getText(), txtPass.getText());
                 
-                // Lưu thông tin
                 currentUserEmail = txtUser.getText();
                 currentPassword = txtPass.getText();
                 
                 showAlert("Thành công", "Đăng nhập OK!");
-                showInboxScreen(); // <-- CHUYỂN THẲNG VÀO HỘP THƯ ĐẾN
+                showInboxScreen();
             } catch (Exception ex) {
                 ex.printStackTrace();
                 showAlert("Lỗi", "Đăng nhập thất bại: " + ex.getMessage());
@@ -82,22 +80,19 @@ public class App extends Application {
 
         ListView<Pop3Handler.EmailInfo> listView = new ListView<>();
         TextArea txtContent = new TextArea();
-        txtContent.setEditable(false); // Chỉ đọc
+        txtContent.setEditable(false);
         txtContent.setWrapText(true);
 
         Button btnRefresh = new Button("Làm mới (Tải mail)");
         Button btnCompose = new Button("Soạn thư mới");
         Button btnLogout = new Button("Đăng xuất");
 
-        // Xử lý sự kiện Tải mail POP3
         btnRefresh.setOnAction(e -> {
     try {
-        // Xóa danh sách cũ trước khi tải mới để không bị trùng lặp
         listView.getItems().clear(); 
         
         Pop3Handler pop3 = new Pop3Handler();
         
-        // QUAN TRỌNG: Thêm "recent:" để Gmail trả về 30 ngày gần nhất ổn định
         String recentUser = "recent:" + currentUserEmail; 
         
         pop3.connect("pop.gmail.com", 995, recentUser, currentPassword);
@@ -115,7 +110,6 @@ public class App extends Application {
     }
 });
 
-        // Khi bấm vào 1 dòng mail -> Hiện nội dung bên phải
         listView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 txtContent.setText(newVal.cleanContent);
@@ -147,11 +141,7 @@ public class App extends Application {
     }
 
     // --- MÀN HÌNH SOẠN THƯ (COMPOSE) ---
-    private void showComposeScreen() {
-        // ... (Giữ nguyên code phần soạn thư như trước) ...
-        // Để ngắn gọn, tôi chỉ viết lại phần khung, bạn giữ nguyên logic cũ nhé
-        // Hoặc thêm nút "Quay lại Inbox"
-        
+    private void showComposeScreen() {        
         Label lblTitle = new Label("SOẠN THƯ MỚI");
         TextField txtTo = new TextField(); txtTo.setPromptText("Người nhận");
         TextField txtSubject = new TextField(); txtSubject.setPromptText("Tiêu đề");
@@ -160,7 +150,7 @@ public class App extends Application {
         Button btnAttach = new Button("Đính kèm tệp...");
         Label lblFileName = new Label("");
         Button btnSend = new Button("Gửi Email");
-        Button btnBack = new Button("Quay lại Inbox"); // Nút mới
+        Button btnBack = new Button("Quay lại Inbox");
 
         btnAttach.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
